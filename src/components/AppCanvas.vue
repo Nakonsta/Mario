@@ -127,11 +127,30 @@ const init = () => {
     }
   }
 
+  class Goomba {
+    constructor({ position }) {
+      this.position = {
+        x: position.x,
+        y: position.y,
+      };
+    }
+  }
+
   function createImage(imagePath) {
     const image = new Image();
     image.src = imagePath;
 
     return image;
+  }
+
+  function createImageAsync(imagePath) {
+    return new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => {
+        resolve(image);
+      };
+      image.src = imagePath;
+    });
   }
 
   let player = new Player();
@@ -149,7 +168,9 @@ const init = () => {
 
   let scrollOffset = 0;
 
-  function reloadGame() {
+  async function reloadGame() {
+    const platformImage = await createImageAsync(platformImgPath);
+
     player = new Player();
     platforms = [
       new Platform({
@@ -164,42 +185,42 @@ const init = () => {
         y: 470,
         width: platformWidth,
         height: 20,
-        image: createImage(platformImgPath),
+        image: platformImage,
       }),
       new Platform({
         x: platformWidth - 3,
         y: 470,
         width: platformWidth,
         height: 20,
-        image: createImage(platformImgPath),
+        image: platformImage,
       }),
       new Platform({
         x: platformWidth * 2 + 100,
         y: 470,
         width: platformWidth,
         height: 20,
-        image: createImage(platformImgPath),
+        image: platformImage,
       }),
       new Platform({
         x: platformWidth * 3 + 300,
         y: 470,
         width: platformWidth,
         height: 20,
-        image: createImage(platformImgPath),
+        image: platformImage,
       }),
       new Platform({
         x: platformWidth * 4 + 298,
         y: 470,
         width: platformWidth,
         height: 20,
-        image: createImage(platformImgPath),
+        image: platformImage,
       }),
       new Platform({
         x: platformWidth * 5 + 698,
         y: 470,
         width: platformWidth,
         height: 20,
-        image: createImage(platformImgPath),
+        image: platformImage,
       }),
     ];
     genericObjects = [
