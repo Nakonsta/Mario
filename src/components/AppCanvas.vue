@@ -8,6 +8,7 @@ import spriteRunLeftImgPath from '/img/spriteRunLeft.png';
 import spriteRunRightImgPath from '/img/spriteRunRight.png';
 import spriteStandLeftImgPath from '/img/spriteStandLeft.png';
 import spriteStandRightImgPath from '/img/spriteStandRight.png';
+import spriteGoombaImgPath from '/img/spriteGoomba.png';
 import { onMounted } from 'vue';
 
 const init = () => {
@@ -137,16 +138,37 @@ const init = () => {
         x: velocity.x,
         y: velocity.y,
       };
-      this.width = 50;
+      this.width = 43.33;
       this.height = 50;
+      this.image = createImage(spriteGoombaImgPath);
+      this.frames = 0;
+      this.oneFrameWidth = 130;
     }
 
     draw() {
-      c.fillStyle = 'crimson';
-      c.fillRect(this.position.x, this.position.y, this.width, this.height);
+      // c.fillStyle = 'crimson';
+      // c.fillRect(this.position.x, this.position.y, this.width, this.height);
+
+      c.drawImage(
+        this.image,
+        this.oneFrameWidth * this.frames,
+        0,
+        this.oneFrameWidth,
+        150,
+        this.position.x,
+        this.position.y,
+        this.width,
+        this.height
+      );
     }
 
     update() {
+      this.frames++;
+
+      if (this.frames >= 58) {
+        this.frames = 0;
+      }
+
       this.draw();
 
       this.position.x += this.velocity.x;
@@ -197,6 +219,16 @@ const init = () => {
         platform.position.y &&
       object.position.x + object.width >= platform.position.x &&
       object.position.x <= platform.position.x + platform.width
+    );
+  }
+
+  function collisionTop({ object1, object2 }) {
+    return (
+      object1.position.y + object1.height <= object2.position.y &&
+      object1.position.y + object1.height + object1.velocity.y >=
+        object2.position.y &&
+      object1.position.x + object1.width >= object2.position.x &&
+      object1.position.x <= object2.position.x + object2.width
     );
   }
 
@@ -300,8 +332,22 @@ const init = () => {
       platform.draw();
     });
 
-    goombas.forEach((goomba) => {
+    goombas.forEach((goomba, index) => {
       goomba.update();
+
+      if (collisionTop({ object1: player, object2: goomba })) {
+        player.velocity.y -= 40;
+        setTimeout(() => {
+          goombas.splice(index, 1);
+        }, 0);
+      } else if (
+        player.position.x + player.width >= goomba.position.x &&
+        player.position.y + player.height >= goomba.position.y &&
+        player.position.x + player.width >= goomba.position.x &&
+        player.position.x <= goomba.position.x + goomba.width
+      ) {
+        reloadGame();
+      }
     });
 
     player.update();
@@ -316,6 +362,7 @@ const init = () => {
     } else {
       player.velocity.x = 0;
 
+      // scrolling code
       if (keys.right.pressed) {
         scrollOffset += player.speed;
         platforms.forEach((platform) => {
@@ -324,6 +371,9 @@ const init = () => {
         genericObjects.forEach((genericObject) => {
           genericObject.position.x -= player.speed * 0.66;
         });
+        goombas.forEach((goomba) => {
+          goomba.position.x -= player.speed;
+        });
       } else if (keys.left.pressed && scrollOffset > 0) {
         scrollOffset -= player.speed;
         platforms.forEach((platform) => {
@@ -331,6 +381,9 @@ const init = () => {
         });
         genericObjects.forEach((genericObject) => {
           genericObject.position.x += player.speed * 0.66;
+        });
+        goombas.forEach((goomba) => {
+          goomba.position.x += player.speed;
         });
       }
     }
@@ -393,6 +446,7 @@ const init = () => {
     // lose scenario
     if (player.position.y > canvas.height) {
       reloadGame();
+      //location.reload()
     }
   }
 
