@@ -128,11 +128,32 @@ const init = () => {
   }
 
   class Goomba {
-    constructor({ position }) {
+    constructor({ position, velocity }) {
       this.position = {
         x: position.x,
         y: position.y,
       };
+      this.velocity = {
+        x: velocity.x,
+        y: velocity.y,
+      };
+      this.width = 50;
+      this.height = 50;
+    }
+
+    draw() {
+      c.fillStyle = 'crimson';
+      c.fillRect(this.position.x, this.position.y, this.width, this.height);
+    }
+
+    update() {
+      this.draw();
+
+      this.position.x += this.velocity.x;
+      this.position.y += this.velocity.y;
+
+      if (this.position.y + this.height + this.velocity.y <= canvas.height)
+        this.velocity.y += gravity;
     }
   }
 
@@ -156,6 +177,7 @@ const init = () => {
   let player = new Player();
   let platforms = [];
   let genericObjects = [];
+  let goombas = [];
 
   const keys = {
     right: {
@@ -168,10 +190,32 @@ const init = () => {
 
   let scrollOffset = 0;
 
+  function isOnTopOfPlatform({ object, platform }) {
+    return (
+      object.position.y + object.height <= platform.position.y &&
+      object.position.y + object.height + object.velocity.y >=
+        platform.position.y &&
+      object.position.x + object.width >= platform.position.x &&
+      object.position.x <= platform.position.x + platform.width
+    );
+  }
+
   async function reloadGame() {
     const platformImage = await createImageAsync(platformImgPath);
 
     player = new Player();
+    goombas = [
+      new Goomba({
+        position: {
+          x: 800,
+          y: 100,
+        },
+        velocity: {
+          x: -0.3,
+          y: 0,
+        },
+      }),
+    ];
     platforms = [
       new Platform({
         x: platformWidth * 4 + 587,
@@ -256,6 +300,10 @@ const init = () => {
       platform.draw();
     });
 
+    goombas.forEach((goomba) => {
+      goomba.update();
+    });
+
     player.update();
 
     if (keys.right.pressed && player.position.x < 400) {
@@ -289,15 +337,15 @@ const init = () => {
 
     // platform collision detection
     platforms.forEach((platform) => {
-      if (
-        player.position.y + player.height <= platform.position.y &&
-        player.position.y + player.height + player.velocity.y >=
-          platform.position.y &&
-        player.position.x + player.width >= platform.position.x &&
-        player.position.x <= platform.position.x + platform.width
-      ) {
+      if (isOnTopOfPlatform({ object: player, platform })) {
         player.velocity.y = 0;
       }
+
+      goombas.forEach((goomba) => {
+        if (isOnTopOfPlatform({ object: goomba, platform })) {
+          goomba.velocity.y = 0;
+        }
+      });
     });
 
     // sprite switching condition
