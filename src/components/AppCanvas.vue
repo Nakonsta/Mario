@@ -8,6 +8,14 @@ import spriteRunLeftImgPath from '/img/spriteRunLeft.png';
 import spriteRunRightImgPath from '/img/spriteRunRight.png';
 import spriteStandLeftImgPath from '/img/spriteStandLeft.png';
 import spriteStandRightImgPath from '/img/spriteStandRight.png';
+
+import spriteMarioRunLeftImgPath from '/img/spriteMarioRunLeft.png';
+import spriteMarioRunRightImgPath from '/img/spriteMarioRunRight.png';
+import spriteMarioStandLeftImgPath from '/img/spriteMarioStandLeft.png';
+import spriteMarioStandRightImgPath from '/img/spriteMarioStandRight.png';
+import spriteMarioJumpLeftImgPath from '/img/spriteMarioJumpLeft.png';
+import spriteMarioJumpRightImgPath from '/img/spriteMarioJumpRight.png';
+
 import spriteGoombaImgPath from '/img/spriteGoomba.png';
 import { onMounted } from 'vue';
 
@@ -33,23 +41,30 @@ const init = () => {
         x: 0,
         y: 0,
       };
-      this.width = 66;
-      this.height = 150;
+      this.scale = 0.3;
+      this.width = 398 * this.scale;
+      this.height = 353 * this.scale;
       this.speed = 10;
       this.frames = 0;
-      this.image = createImage(spriteStandRightImgPath);
+      this.image = createImage(spriteMarioStandRightImgPath);
       this.sprites = {
         stand: {
-          right: createImage(spriteStandRightImgPath),
-          left: createImage(spriteStandLeftImgPath),
-          cropWidth: 177,
-          width: 66,
+          right: createImage(spriteMarioStandRightImgPath),
+          left: createImage(spriteMarioStandLeftImgPath),
+          cropWidth: 398,
+          width: 398 * this.scale,
         },
         run: {
-          right: createImage(spriteRunRightImgPath),
-          left: createImage(spriteRunLeftImgPath),
-          cropWidth: 341,
-          width: 127.875,
+          right: createImage(spriteMarioRunRightImgPath),
+          left: createImage(spriteMarioRunLeftImgPath),
+          cropWidth: 398,
+          width: 398 * this.scale,
+        },
+        jump: {
+          right: createImage(spriteMarioJumpRightImgPath),
+          left: createImage(spriteMarioJumpLeftImgPath),
+          cropWidth: 398,
+          width: 398 * this.scale,
         },
       };
       this.currentSprite = this.sprites.stand.right;
@@ -62,7 +77,7 @@ const init = () => {
         this.currentCropWidth * this.frames,
         0,
         this.currentCropWidth,
-        400,
+        353,
         this.position.x,
         this.position.y,
         this.width,
@@ -74,15 +89,20 @@ const init = () => {
       this.frames++;
 
       if (
-        this.frames > 59 &&
+        this.frames > 58 &&
         (this.currentSprite === this.sprites.stand.right ||
           this.currentSprite === this.sprites.stand.left)
       )
         this.frames = 0;
       else if (
-        this.frames > 29 &&
+        this.frames > 28 &&
         (this.currentSprite === this.sprites.run.right ||
           this.currentSprite === this.sprites.run.left)
+      )
+        this.frames = 0;
+      else if (
+        this.currentSprite === this.sprites.jump.right ||
+        this.currentSprite === this.sprites.jump.left
       )
         this.frames = 0;
 
@@ -523,40 +543,51 @@ const init = () => {
     });
 
     // sprite switching condition
-    if (
-      keys.right.pressed &&
-      lastKey === 'right' &&
-      player.currentSprite !== player.sprites.run.right
-    ) {
-      player.frames = 1;
-      player.currentSprite = player.sprites.run.right;
-      player.currentSprite = player.sprites.run.right;
-      player.currentCropWidth = player.sprites.run.cropWidth;
-      player.width = player.sprites.run.width;
-    } else if (
-      keys.left.pressed &&
-      lastKey === 'left' &&
-      player.currentSprite !== player.sprites.run.left
-    ) {
-      player.currentSprite = player.sprites.run.left;
-      player.currentCropWidth = player.sprites.run.cropWidth;
-      player.width = player.sprites.run.width;
-    } else if (
-      !keys.left.pressed &&
-      lastKey === 'left' &&
-      player.currentSprite !== player.sprites.stand.left
-    ) {
-      player.currentSprite = player.sprites.stand.left;
-      player.currentCropWidth = player.sprites.stand.cropWidth;
-      player.width = player.sprites.stand.width;
-    } else if (
-      !keys.right.pressed &&
-      lastKey === 'right' &&
-      player.currentSprite !== player.sprites.stand.right
-    ) {
-      player.currentSprite = player.sprites.stand.right;
-      player.currentCropWidth = player.sprites.stand.cropWidth;
-      player.width = player.sprites.stand.width;
+    if (player.velocity.y === 0) {
+      if (
+        keys.right.pressed &&
+        lastKey === 'right' &&
+        player.currentSprite !== player.sprites.run.right
+      ) {
+        player.frames = 1;
+        player.currentSprite = player.sprites.run.right;
+        player.currentSprite = player.sprites.run.right;
+        player.currentCropWidth = player.sprites.run.cropWidth;
+        player.width = player.sprites.run.width;
+      } else if (
+        keys.left.pressed &&
+        lastKey === 'left' &&
+        player.currentSprite !== player.sprites.run.left
+      ) {
+        player.currentSprite = player.sprites.run.left;
+        player.currentCropWidth = player.sprites.run.cropWidth;
+        player.width = player.sprites.run.width;
+      } else if (
+        !keys.left.pressed &&
+        lastKey === 'left' &&
+        player.currentSprite !== player.sprites.stand.left
+      ) {
+        player.currentSprite = player.sprites.stand.left;
+        player.currentCropWidth = player.sprites.stand.cropWidth;
+        player.width = player.sprites.stand.width;
+      } else if (
+        !keys.right.pressed &&
+        lastKey === 'right' &&
+        player.currentSprite !== player.sprites.stand.right
+      ) {
+        player.currentSprite = player.sprites.stand.right;
+        player.currentCropWidth = player.sprites.stand.cropWidth;
+        player.width = player.sprites.stand.width;
+      } else if (
+        !keys.right.pressed &&
+        !keys.left.pressed &&
+        !lastKey &&
+        player.currentSprite !== player.sprites.stand.right
+      ) {
+        player.currentSprite = player.sprites.stand.right;
+        player.currentCropWidth = player.sprites.stand.cropWidth;
+        player.width = player.sprites.stand.width;
+      }
     }
 
     // win scenario
@@ -592,6 +623,10 @@ const init = () => {
       case 87:
       case 38:
         player.velocity.y -= 25;
+        if (lastKey === 'right')
+          player.currentSprite = player.sprites.jump.right;
+        else if (lastKey === 'left')
+          player.currentSprite = player.sprites.jump.left;
         break;
     }
   });
