@@ -1,23 +1,32 @@
 <script setup lang="ts">
 // @ts-nocheck
+import { onMounted } from 'vue';
+import {
+  isOnTopOfPlatform,
+  collisionTop,
+  isOnTopOfPlatformCircle,
+  createImage,
+  createImageAsync,
+  hitBottomOfPlatform,
+  hitSideOfPlatform,
+} from '@/utils';
 import platformImgPath from '/img/platform.png';
 import backgroundImgPath from '/img/background.png';
 import hillsImgPath from '/img/hills.png';
 import platformSmallTallImgPath from '/img/platformSmallTall.png';
+import blockImgPath from '/img/block.png';
+import blockTriImgPath from '/img/blockTri.png';
 import spriteRunLeftImgPath from '/img/spriteRunLeft.png';
 import spriteRunRightImgPath from '/img/spriteRunRight.png';
 import spriteStandLeftImgPath from '/img/spriteStandLeft.png';
 import spriteStandRightImgPath from '/img/spriteStandRight.png';
-
 import spriteMarioRunLeftImgPath from '/img/spriteMarioRunLeft.png';
 import spriteMarioRunRightImgPath from '/img/spriteMarioRunRight.png';
 import spriteMarioStandLeftImgPath from '/img/spriteMarioStandLeft.png';
 import spriteMarioStandRightImgPath from '/img/spriteMarioStandRight.png';
 import spriteMarioJumpLeftImgPath from '/img/spriteMarioJumpLeft.png';
 import spriteMarioJumpRightImgPath from '/img/spriteMarioJumpRight.png';
-
 import spriteGoombaImgPath from '/img/spriteGoomba.png';
-import { onMounted } from 'vue';
 
 const init = () => {
   const canvas = document.querySelector('canvas');
@@ -72,6 +81,8 @@ const init = () => {
     }
 
     draw() {
+      c.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      c.fillRect(this.position.x, this.position.y, this.width, this.height);
       c.drawImage(
         this.currentSprite,
         this.currentCropWidth * this.frames,
@@ -117,18 +128,33 @@ const init = () => {
   }
 
   class Platform {
-    constructor({ x, y, width, height, image }) {
+    constructor({ x, y, width, height, image, block, text }) {
       this.position = {
         x,
         y,
       };
+      this.velocity = {
+        x: 0,
+      };
       this.image = image;
       this.width = width;
       this.height = height;
+      this.block = block;
+      this.text = text;
     }
 
     draw() {
       c.drawImage(this.image, this.position.x, this.position.y);
+      if (this.text) {
+        c.fillStyle = 'red';
+        c.fillText(this.text, this.position.x, this.position.y);
+      }
+    }
+
+    update() {
+      this.draw();
+
+      this.position.x += this.velocity.x;
     }
   }
 
@@ -138,6 +164,9 @@ const init = () => {
         x,
         y,
       };
+      this.velocity = {
+        x: 0,
+      };
       this.image = image;
       this.width = width;
       this.height = height;
@@ -145,6 +174,12 @@ const init = () => {
 
     draw() {
       c.drawImage(this.image, this.position.x, this.position.y);
+    }
+
+    update() {
+      this.draw();
+
+      this.position.x += this.velocity.x;
     }
   }
 
@@ -208,14 +243,6 @@ const init = () => {
     }
   }
 
-  function getParticleColor() {
-    const r = Math.floor(Math.random() * 75) + 150;
-    const g = Math.floor(Math.random() * 70) + 30;
-    const b = Math.floor(Math.random() * 10) + 10;
-
-    return `rgb(${r}, ${g}, ${b})`;
-  }
-
   class Particle {
     constructor({ position, velocity, radius }) {
       this.position = {
@@ -258,21 +285,12 @@ const init = () => {
     }
   }
 
-  function createImage(imagePath) {
-    const image = new Image();
-    image.src = imagePath;
+  function getParticleColor() {
+    const r = Math.floor(Math.random() * 75) + 150;
+    const g = Math.floor(Math.random() * 70) + 30;
+    const b = Math.floor(Math.random() * 10) + 10;
 
-    return image;
-  }
-
-  function createImageAsync(imagePath) {
-    return new Promise((resolve) => {
-      const image = new Image();
-      image.onload = () => {
-        resolve(image);
-      };
-      image.src = imagePath;
-    });
+    return `rgb(${r}, ${g}, ${b})`;
   }
 
   let player = new Player();
@@ -292,38 +310,9 @@ const init = () => {
 
   let scrollOffset = 0;
 
-  function isOnTopOfPlatform({ object, platform }) {
-    return (
-      object.position.y + object.height <= platform.position.y &&
-      object.position.y + object.height + object.velocity.y >=
-        platform.position.y &&
-      object.position.x + object.width >= platform.position.x &&
-      object.position.x <= platform.position.x + platform.width
-    );
-  }
-
-  function collisionTop({ object1, object2 }) {
-    return (
-      object1.position.y + object1.height <= object2.position.y &&
-      object1.position.y + object1.height + object1.velocity.y >=
-        object2.position.y &&
-      object1.position.x + object1.width >= object2.position.x &&
-      object1.position.x <= object2.position.x + object2.width
-    );
-  }
-
-  function isOnTopOfPlatformCircle({ object, platform }) {
-    return (
-      object.position.y + object.radius <= platform.position.y &&
-      object.position.y + object.radius + object.velocity.y >=
-        platform.position.y &&
-      object.position.x + object.radius >= platform.position.x &&
-      object.position.x <= platform.position.x + platform.width
-    );
-  }
-
   async function reloadGame() {
     const platformImage = await createImageAsync(platformImgPath);
+    const blockTriImage = await createImageAsync(blockTriImgPath);
 
     player = new Player();
     goombas = [
@@ -381,6 +370,7 @@ const init = () => {
         width: platformWidth,
         height: 20,
         image: platformImage,
+        block: true,
       }),
       new Platform({
         x: platformWidth * 3 + 300,
@@ -388,6 +378,7 @@ const init = () => {
         width: platformWidth,
         height: 20,
         image: platformImage,
+        block: true,
       }),
       new Platform({
         x: platformWidth * 4 + 298,
@@ -402,6 +393,15 @@ const init = () => {
         width: platformWidth,
         height: 20,
         image: platformImage,
+        block: true,
+      }),
+      new Platform({
+        x: 850,
+        y: 270,
+        width: 152,
+        height: 51,
+        image: blockTriImage,
+        block: true,
       }),
     ];
     genericObjects = [
@@ -430,11 +430,13 @@ const init = () => {
     c.fillRect(0, 0, canvas.width, canvas.height);
 
     genericObjects.forEach((genericObject) => {
-      genericObject.draw();
+      genericObject.update();
+      genericObject.velocity.x = 0;
     });
 
     platforms.forEach((platform) => {
-      platform.draw();
+      platform.update();
+      platform.velocity.x = 0;
     });
 
     goombas.forEach((goomba, index) => {
@@ -476,6 +478,7 @@ const init = () => {
     });
     player.update();
 
+    let hitSide = false;
     if (keys.right.pressed && player.position.x < 400) {
       player.velocity.x = player.speed;
     } else if (
@@ -488,33 +491,69 @@ const init = () => {
 
       // scrolling code
       if (keys.right.pressed) {
-        scrollOffset += player.speed;
-        platforms.forEach((platform) => {
-          platform.position.x -= player.speed;
-        });
-        genericObjects.forEach((genericObject) => {
-          genericObject.position.x -= player.speed * 0.66;
-        });
-        goombas.forEach((goomba) => {
-          goomba.position.x -= player.speed;
-        });
-        particles.forEach((particle) => {
-          particle.position.x -= player.speed;
-        });
+        for (let i = 0; i < platforms.length; i++) {
+          const platform = platforms[i];
+          platform.velocity.x = -player.speed;
+
+          if (
+            platform.block &&
+            hitSideOfPlatform({ object: player, platform })
+          ) {
+            platforms.forEach((platform) => {
+              platform.velocity.x = 0;
+            });
+
+            hitSide = true;
+            break;
+          }
+        }
+
+        if (!hitSide) {
+          scrollOffset += player.speed;
+
+          platforms.forEach((platform) => {
+            platform.velocity.x = -player.speed;
+          });
+          genericObjects.forEach((genericObject) => {
+            genericObject.velocity.x = -player.speed * 0.66;
+          });
+          goombas.forEach((goomba) => {
+            goomba.position.x -= player.speed;
+          });
+          particles.forEach((particle) => {
+            particle.position.x -= player.speed;
+          });
+        }
       } else if (keys.left.pressed && scrollOffset > 0) {
-        scrollOffset -= player.speed;
-        platforms.forEach((platform) => {
-          platform.position.x += player.speed;
-        });
-        genericObjects.forEach((genericObject) => {
-          genericObject.position.x += player.speed * 0.66;
-        });
-        goombas.forEach((goomba) => {
-          goomba.position.x += player.speed;
-        });
-        particles.forEach((particle) => {
-          particle.position.x += player.speed;
-        });
+        for (let i = 0; i < platforms.length; i++) {
+          const platform = platforms[i];
+          platform.velocity.x = player.speed;
+
+          if (
+            platform.block &&
+            hitSideOfPlatform({ object: player, platform })
+          ) {
+            platforms.forEach((platform) => {
+              platform.velocity.x = 0;
+            });
+
+            hitSide = true;
+          }
+        }
+
+        if (!hitSide) {
+          scrollOffset -= player.speed;
+
+          genericObjects.forEach((genericObject) => {
+            genericObject.velocity.x = player.speed * 0.66;
+          });
+          goombas.forEach((goomba) => {
+            goomba.position.x += player.speed;
+          });
+          particles.forEach((particle) => {
+            particle.position.x += player.speed;
+          });
+        }
       }
     }
 
@@ -522,6 +561,14 @@ const init = () => {
     platforms.forEach((platform) => {
       if (isOnTopOfPlatform({ object: player, platform })) {
         player.velocity.y = 0;
+      }
+
+      if (platform.block && hitBottomOfPlatform({ object: player, platform })) {
+        player.velocity.y = -player.velocity.y;
+      }
+
+      if (platform.block && hitSideOfPlatform({ object: player, platform })) {
+        player.velocity.x = 0;
       }
 
       // partivles bouncing
