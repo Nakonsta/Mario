@@ -27,6 +27,7 @@ import spriteMarioStandRightImgPath from '/img/spriteMarioStandRight.png';
 import spriteMarioJumpLeftImgPath from '/img/spriteMarioJumpLeft.png';
 import spriteMarioJumpRightImgPath from '/img/spriteMarioJumpRight.png';
 import spriteGoombaImgPath from '/img/spriteGoomba.png';
+import spriteFireFlowerImgPath from '/img/spriteFireFlower.png';
 
 const init = () => {
   const canvas = document.querySelector('canvas');
@@ -285,6 +286,57 @@ const init = () => {
     }
   }
 
+  class FireFlower {
+    constructor({ position, velocity }) {
+      this.position = {
+        x: position.x,
+        y: position.y,
+      };
+      this.velocity = {
+        x: velocity.x,
+        y: velocity.y,
+      };
+      this.width = 56;
+      this.height = 60;
+      this.image = createImage(spriteFireFlowerImgPath);
+      this.frames = 0;
+      this.oneFrameWidth = 56;
+    }
+
+    draw() {
+      // c.fillStyle = 'crimson';
+      // c.fillRect(this.position.x, this.position.y, this.width, this.height);
+
+      c.drawImage(
+        this.image,
+        this.oneFrameWidth * this.frames,
+        0,
+        this.oneFrameWidth,
+        150,
+        this.position.x,
+        this.position.y,
+        this.width,
+        this.height
+      );
+    }
+
+    update() {
+      this.frames++;
+
+      if (this.frames >= 58) {
+        this.frames = 0;
+      }
+
+      this.draw();
+
+      this.position.x += this.velocity.x;
+      this.position.y += this.velocity.y;
+
+      if (this.position.y + this.height + this.velocity.y <= canvas.height)
+        this.velocity.y += gravity;
+    }
+  }
+
   function getParticleColor() {
     const r = Math.floor(Math.random() * 75) + 150;
     const g = Math.floor(Math.random() * 70) + 30;
@@ -298,6 +350,18 @@ const init = () => {
   let genericObjects = [];
   let goombas = [];
   let particles = [];
+  let fireFlowers = [
+    new FireFlower({
+      position: {
+        x: 400,
+        y: 100,
+      },
+      velocity: {
+        x: 0,
+        y: 0,
+      },
+    }),
+  ];
 
   const keys = {
     right: {
@@ -439,6 +503,10 @@ const init = () => {
       platform.velocity.x = 0;
     });
 
+    fireFlowers.forEach((fireFlower) => {
+      fireFlower.update();
+    });
+
     goombas.forEach((goomba, index) => {
       goomba.update();
 
@@ -476,6 +544,7 @@ const init = () => {
     particles.forEach((particle) => {
       particle.update();
     });
+
     player.update();
 
     let hitSide = false;
@@ -585,6 +654,12 @@ const init = () => {
       goombas.forEach((goomba) => {
         if (isOnTopOfPlatform({ object: goomba, platform })) {
           goomba.velocity.y = 0;
+        }
+      });
+
+      fireFlowers.forEach((fireFlower) => {
+        if (isOnTopOfPlatform({ object: fireFlower, platform })) {
+          fireFlower.velocity.y = 0;
         }
       });
     });
