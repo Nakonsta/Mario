@@ -13,6 +13,10 @@ import {
 } from '@/utils';
 import platformImgPath from '/img/platform.png';
 import backgroundImgPath from '/img/background.png';
+import mdPlatformImgPath from '/img/mdPlatform.png';
+import lgPlatformImgPath from '/img/lgPlatform.png';
+import tPlatformImgPath from '/img/tPlatform.png';
+import xtPlatformImgPath from '/img/xtPlatform.png';
 import hillsImgPath from '/img/hills.png';
 import platformSmallTallImgPath from '/img/platformSmallTall.png';
 import blockImgPath from '/img/block.png';
@@ -41,11 +45,17 @@ const init = () => {
   const c = canvas.getContext('2d');
   const platformWidth = 580;
   const platformTallWidth = 291;
+  const platformLgWidth = 910;
+  const platformTWidth = 228;
+  const platformXtWidth = 229;
+  const blockWidth = 51;
+  const blockTriWidth = 152;
 
   canvas.width = 1024;
   canvas.height = 576;
 
   const gravity = 1.5;
+  const goombaWidth = 43.33;
   let lastKey;
 
   class Player {
@@ -102,8 +112,8 @@ const init = () => {
     draw() {
       c.save();
       c.globalAlpha = this.opacity;
-      c.fillStyle = 'rgba(255, 255, 255, 0.5)';
-      c.fillRect(this.position.x, this.position.y, this.width, this.height);
+      // c.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      // c.fillRect(this.position.x, this.position.y, this.width, this.height);
       c.drawImage(
         this.currentSprite,
         this.currentCropWidth * this.frames,
@@ -227,7 +237,7 @@ const init = () => {
         x: velocity.x,
         y: velocity.y,
       };
-      this.width = 43.33;
+      this.width = goombaWidth;
       this.height = 50;
       this.image = createImage(spriteGoombaImgPath);
       this.frames = 0;
@@ -379,6 +389,12 @@ const init = () => {
     return `rgb(${r}, ${g}, ${b})`;
   }
 
+  let platformImage;
+  let blockTriImage;
+  let blockImage;
+  let lgPlatformImage;
+  let tPlatformImage;
+  let xtPlatformImage;
   let player = new Player();
   let platforms = [];
   let genericObjects = [];
@@ -398,8 +414,12 @@ const init = () => {
   let scrollOffset = 0;
 
   async function reloadGame() {
-    const platformImage = await createImageAsync(platformImgPath);
-    const blockTriImage = await createImageAsync(blockTriImgPath);
+    platformImage = await createImageAsync(platformImgPath);
+    blockTriImage = await createImageAsync(blockTriImgPath);
+    blockImage = await createImageAsync(blockImgPath);
+    lgPlatformImage = await createImageAsync(lgPlatformImgPath);
+    tPlatformImage = await createImageAsync(tPlatformImgPath);
+    xtPlatformImage = await createImageAsync(xtPlatformImgPath);
 
     fireFlowers = [
       new FireFlower({
@@ -417,7 +437,7 @@ const init = () => {
     goombas = [
       new Goomba({
         position: {
-          x: 800,
+          x: 908 + lgPlatformImage.width - goombaWidth,
           y: 100,
         },
         velocity: {
@@ -425,81 +445,198 @@ const init = () => {
           y: 0,
         },
         distance: {
-          limit: 200,
+          limit: 400,
           traveled: 0,
         },
       }),
       new Goomba({
         position: {
-          x: 1400,
+          x: 3249 + lgPlatformImage.width - 43.33,
           y: 100,
         },
         velocity: {
           x: -0.3,
           y: 0,
         },
+        distance: {
+          limit: 400,
+          traveled: 0,
+        },
+      }),
+      new Goomba({
+        position: {
+          x: 3249 + lgPlatformImage.width - goombaWidth - goombaWidth,
+          y: 100,
+        },
+        velocity: {
+          x: -0.3,
+          y: 0,
+        },
+        distance: {
+          limit: 400,
+          traveled: 0,
+        },
+      }),
+      new Goomba({
+        position: {
+          x:
+            3249 +
+            lgPlatformImage.width -
+            goombaWidth -
+            goombaWidth -
+            goombaWidth,
+          y: 100,
+        },
+        velocity: {
+          x: -0.3,
+          y: 0,
+        },
+        distance: {
+          limit: 400,
+          traveled: 0,
+        },
+      }),
+      new Goomba({
+        position: {
+          x:
+            3249 +
+            lgPlatformImage.width -
+            goombaWidth -
+            goombaWidth -
+            goombaWidth -
+            goombaWidth,
+          y: 100,
+        },
+        velocity: {
+          x: -0.3,
+          y: 0,
+        },
+        distance: {
+          limit: 400,
+          traveled: 0,
+        },
+      }),
+      new Goomba({
+        position: {
+          x: 5135 + platformXtWidth / 2 + goombaWidth,
+          y: 100,
+        },
+        velocity: {
+          x: -0.3,
+          y: 0,
+        },
+        distance: {
+          limit: 100,
+          traveled: 0,
+        },
+      }),
+      new Goomba({
+        position: {
+          x: 6968,
+          y: 0,
+        },
+        velocity: {
+          x: -0.3,
+          y: 0,
+        },
+        distance: {
+          limit: 100,
+          traveled: 0,
+        },
       }),
     ];
     particles = [];
     platforms = [
       new Platform({
-        x: platformWidth * 4 + 587,
-        y: 270,
-        width: platformTallWidth,
-        height: 20,
-        image: createImage(platformSmallTallImgPath),
-      }),
-      new Platform({
-        x: -1,
-        y: 470,
-        width: platformWidth,
-        height: 20,
-        image: platformImage,
-      }),
-      new Platform({
-        x: platformWidth - 3,
-        y: 470,
-        width: platformWidth,
-        height: 20,
-        image: platformImage,
-      }),
-      new Platform({
-        x: platformWidth * 2 + 100,
-        y: 470,
-        width: platformWidth,
-        height: 20,
-        image: platformImage,
-        block: true,
-      }),
-      new Platform({
-        x: platformWidth * 3 + 300,
-        y: 470,
-        width: platformWidth,
-        height: 20,
-        image: platformImage,
-        block: true,
-      }),
-      new Platform({
-        x: platformWidth * 4 + 298,
-        y: 470,
-        width: platformWidth,
-        height: 20,
-        image: platformImage,
-      }),
-      new Platform({
-        x: platformWidth * 5 + 698,
-        y: 470,
-        width: platformWidth,
-        height: 20,
-        image: platformImage,
-        block: true,
-      }),
-      new Platform({
-        x: 850,
-        y: 270,
-        width: 152,
+        x: 908 + 100,
+        y: 300,
+        width: blockTriWidth,
         height: 51,
         image: blockTriImage,
+        block: true,
+      }),
+      new Platform({
+        x: 908 + 100 + blockWidth,
+        y: 100,
+        width: blockWidth,
+        height: 51,
+        image: blockImage,
+        block: true,
+      }),
+      new Platform({
+        x: 1991 + platformLgWidth - platformTWidth,
+        y: canvas.height - lgPlatformImage.height - tPlatformImage.height,
+        width: platformTWidth,
+        height: 178,
+        image: tPlatformImage,
+        block: true,
+      }),
+      new Platform({
+        x: 1991 + platformLgWidth - platformTWidth - 100,
+        y:
+          canvas.height -
+          lgPlatformImage.height -
+          tPlatformImage.height +
+          blockImage.height,
+        width: platformTWidth,
+        height: 51,
+        image: blockImage,
+        block: true,
+      }),
+      new Platform({
+        x: 5712 + platformXtWidth + 175,
+        y: canvas.height - xtPlatformImage.height,
+        width: platformTWidth,
+        height: 51,
+        image: blockImage,
+        block: true,
+      }),
+      new Platform({
+        x: 6116 + 175,
+        y: canvas.height - xtPlatformImage.height,
+        width: platformTWidth,
+        height: 51,
+        image: blockImage,
+        block: true,
+      }),
+      new Platform({
+        x: 6116 + 175 * 2,
+        y: canvas.height - xtPlatformImage.height,
+        width: platformTWidth,
+        height: 51,
+        image: blockImage,
+        block: true,
+      }),
+      new Platform({
+        x: 6116 + 175 * 3,
+        y: canvas.height - xtPlatformImage.height - 100,
+        width: platformTWidth,
+        height: 51,
+        image: blockImage,
+        block: true,
+      }),
+      new Platform({
+        x: 6116 + 175 * 4,
+        y: canvas.height - xtPlatformImage.height - 200,
+        width: platformTWidth,
+        height: 51,
+        image: blockTriImage,
+        block: true,
+      }),
+      new Platform({
+        x: 6116 + 175 * 4 + blockTriImage.width,
+        y: canvas.height - xtPlatformImage.height - 200,
+        width: platformTWidth,
+        height: 51,
+        image: blockTriImage,
+        block: true,
+      }),
+      new Platform({
+        x: 6968 + 300,
+        y: canvas.height - lgPlatformImage.height,
+        width: platformLgWidth,
+        height: 98,
+        image: lgPlatformImage,
         block: true,
       }),
     ];
@@ -521,6 +658,80 @@ const init = () => {
     ];
 
     scrollOffset = 0;
+
+    const platformsMap = [
+      'lg',
+      'lg',
+      'gap',
+      'lg',
+      'gap',
+      'gap',
+      'lg',
+      'gap',
+      't',
+      'gap',
+      'xt',
+      'gap',
+      'xt',
+      'gap',
+      'gap',
+      'xt',
+    ];
+
+    let platformDistance = 0;
+
+    platformsMap.forEach((symbol) => {
+      switch (symbol) {
+        case 'lg':
+          platforms.push(
+            new Platform({
+              x: platformDistance,
+              y: canvas.height - lgPlatformImage.height,
+              width: platformLgWidth,
+              height: 98,
+              image: lgPlatformImage,
+              block: true,
+            })
+          );
+
+          platformDistance += platformLgWidth - 2;
+          break;
+
+        case 'gap':
+          platformDistance += 175;
+          break;
+
+        case 't':
+          platforms.push(
+            new Platform({
+              x: platformDistance,
+              y: canvas.height - tPlatformImage.height,
+              width: platformTWidth,
+              height: 178,
+              image: tPlatformImage,
+              block: true,
+            })
+          );
+
+          platformDistance += platformTWidth - 2;
+          break;
+
+        case 'xt':
+          platforms.push(
+            new Platform({
+              x: platformDistance,
+              y: canvas.height - xtPlatformImage.height,
+              width: platformXtWidth,
+              height: 295,
+              image: xtPlatformImage,
+              block: true,
+            })
+          );
+
+          platformDistance += platformXtWidth - 2;
+          break;
+      }
+    });
   }
 
   function animate() {
@@ -773,7 +984,7 @@ const init = () => {
     });
 
     // win scenario
-    if (scrollOffset >= platformWidth * 5 + 400) {
+    if (platformImage && scrollOffset + 400 + player.width >= 6968 + 300) {
       console.log('win');
     }
 
