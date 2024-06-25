@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // @ts-nocheck
+import gsap from 'gsap';
 import { onMounted } from 'vue';
 import {
   isOnTopOfPlatform,
@@ -39,6 +40,7 @@ import spriteFireFlowerJumpLeftImgPath from '/img/spriteFireFlowerJumpLeft.png';
 import spriteFireFlowerJumpRightImgPath from '/img/spriteFireFlowerJumpRight.png';
 import spriteGoombaImgPath from '/img/spriteGoomba.png';
 import spriteFireFlowerImgPath from '/img/spriteFireFlower.png';
+import flagPoleImgPath from '/img/flagPole.png';
 
 const init = () => {
   const canvas = document.querySelector('canvas');
@@ -54,7 +56,7 @@ const init = () => {
   canvas.width = 1024;
   canvas.height = 576;
 
-  const gravity = 1.5;
+  let gravity = 1.5;
   const goombaWidth = 43.33;
   let lastKey;
 
@@ -288,7 +290,14 @@ const init = () => {
   }
 
   class Particle {
-    constructor({ position, velocity, radius, color, fireball = false }) {
+    constructor({
+      position,
+      velocity,
+      radius,
+      color,
+      fireball = false,
+      fades = false,
+    }) {
       this.position = {
         x: position.x,
         y: position.y,
@@ -301,9 +310,13 @@ const init = () => {
       this.ttl = 500;
       this.color = color || getParticleColor();
       this.fireball = fireball;
+      this.opacity = 1;
+      this.fades = fades;
     }
 
     draw() {
+      c.save();
+      c.globalAlpha = this.opacity;
       c.beginPath();
       c.arc(
         this.position.x,
@@ -316,6 +329,7 @@ const init = () => {
       c.fillStyle = this.color;
       c.fill();
       c.closePath();
+      c.restore();
     }
 
     update() {
@@ -327,6 +341,12 @@ const init = () => {
 
       if (this.position.y + this.radius + this.velocity.y <= canvas.height)
         this.velocity.y += gravity * 0.4;
+
+      if (this.fades && this.opacity > 0) {
+        this.opacity -= 0.01;
+      }
+
+      if (this.opacity < 0) this.opacity = 0;
     }
   }
 
@@ -395,6 +415,7 @@ const init = () => {
   let lgPlatformImage;
   let tPlatformImage;
   let xtPlatformImage;
+  let flagPoleImage;
   let player = new Player();
   let platforms = [];
   let genericObjects = [];
@@ -412,14 +433,28 @@ const init = () => {
   };
 
   let scrollOffset = 0;
+  let flagPole;
+  let game;
 
   async function reloadGame() {
+    game = {
+      disableUserInput: false,
+    };
     platformImage = await createImageAsync(platformImgPath);
     blockTriImage = await createImageAsync(blockTriImgPath);
     blockImage = await createImageAsync(blockImgPath);
     lgPlatformImage = await createImageAsync(lgPlatformImgPath);
     tPlatformImage = await createImageAsync(tPlatformImgPath);
     xtPlatformImage = await createImageAsync(xtPlatformImgPath);
+    flagPoleImage = await createImageAsync(flagPoleImgPath);
+
+    flagPole = new GenericObject({
+      x: 6968 + 600,
+      y: canvas.height - lgPlatformImage.height - flagPoleImage.height,
+      width: flagPoleImage.width,
+      height: flagPoleImage.height,
+      image: flagPoleImage,
+    });
 
     fireFlowers = [
       new FireFlower({
@@ -736,6 +771,7 @@ const init = () => {
 
   function animate() {
     requestAnimationFrame(animate);
+
     c.fillStyle = 'white';
     c.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -744,10 +780,95 @@ const init = () => {
       genericObject.velocity.x = 0;
     });
 
+    particles.forEach((particle, index) => {
+      particle.update();
+
+      if (
+        particle.fireball &&
+        (particle.position.x - particle.radius >= canvas.width ||
+          particle.position.x + particle.radius <= 0)
+      )
+        setTimeout(() => {
+          particles.splice(index, 1);
+        }, 0);
+    });
+
     platforms.forEach((platform) => {
       platform.update();
       platform.velocity.x = 0;
     });
+
+    if (flagPole) {
+      flagPole?.update();
+      flagPole.velocity.x = 0;
+
+      // Mario touches flagpole
+      // win scenario
+      if (
+        !game.disableUserInput &&
+        objectsTouch({
+          object1: player,
+          object2: flagPole,
+        })
+      ) {
+        game.disableUserInput = true;
+        player.velocity.x = 0;
+        player.velocity.y = 0;
+        gravity = 0;
+
+        player.currentSprite = player.sprites.stand.right;
+
+        if (player.powerUps.fireFlower)
+          player.currentSprite = player.sprites.stand.fireFlower.right;
+
+        gsap.to(player.position, {
+          y: canvas.height - lgPlatformImage.height - player.height,
+          duration: 0.4,
+          onComplete() {
+            player.currentSprite = player.powerUps.fireFlower
+              ? player.sprites.run.fireFlower.right
+              : player.sprites.run.right;
+          },
+        });
+
+        gsap.to(player.position, {
+          delay: 0.4,
+          x: canvas.width,
+          duration: 3,
+          ease: 'power1.in',
+        });
+
+        // fireworks
+        const particleCount = 300;
+        const radians = (Math.PI * 2) / particleCount;
+        const power = 8;
+        let increment = 1;
+
+        const intervalId = setInterval(() => {
+          for (let i = 0; i < particleCount; i++) {
+            particles.push(
+              new Particle({
+                position: {
+                  x: (canvas.width / 4) * increment,
+                  y: canvas.height / 2,
+                },
+                velocity: {
+                  x: Math.cos(radians * i) * power * Math.random(),
+                  y: Math.sin(radians * i) * power * Math.random(),
+                },
+                radius: 4 * Math.random(),
+                color: `hsl(${Math.random() * 270}, 100%, 50%)`,
+                fades: true,
+              })
+            );
+          }
+
+          if (increment >= 3) clearInterval(intervalId);
+
+          increment++;
+        }, 1000);
+      }
+    }
 
     // Mario obtains powerups
     fireFlowers.forEach((fireFlower, i) => {
@@ -844,22 +965,13 @@ const init = () => {
       }
     });
 
-    particles.forEach((particle, index) => {
-      particle.update();
-
-      if (
-        particle.fireball &&
-        (particle.position.x - particle.radius >= canvas.width ||
-          particle.position.x + particle.radius <= 0)
-      )
-        setTimeout(() => {
-          particles.splice(index, 1);
-        }, 0);
-    });
-
     player.update();
 
+    if (game.disableUserInput) return;
+
+    // scrolling code starts
     let hitSide = false;
+
     if (keys.right.pressed && player.position.x < 400) {
       player.velocity.x = player.speed;
     } else if (
@@ -895,6 +1007,7 @@ const init = () => {
           platforms.forEach((platform) => {
             platform.velocity.x = -player.speed;
           });
+          flagPole.velocity.x = -player.speed;
           genericObjects.forEach((genericObject) => {
             genericObject.velocity.x = -player.speed * 0.66;
           });
@@ -931,6 +1044,7 @@ const init = () => {
           genericObjects.forEach((genericObject) => {
             genericObject.velocity.x = player.speed * 0.66;
           });
+          flagPole.velocity.x = player.speed;
           fireFlowers.forEach((fireFlower) => {
             fireFlower.position.x += player.speed;
           });
@@ -982,11 +1096,6 @@ const init = () => {
         }
       });
     });
-
-    // win scenario
-    if (platformImage && scrollOffset + 400 + player.width >= 6968 + 300) {
-      console.log('win');
-    }
 
     // lose scenario
     if (player.position.y > canvas.height) {
@@ -1073,6 +1182,8 @@ const init = () => {
   animate();
 
   addEventListener('keydown', ({ keyCode }) => {
+    if (game.disableUserInput) return;
+
     switch (keyCode) {
       case 65:
       case 37:
@@ -1130,6 +1241,8 @@ const init = () => {
   });
 
   addEventListener('keyup', ({ keyCode }) => {
+    if (game.disableUserInput) return;
+
     switch (keyCode) {
       case 65:
       case 37:
